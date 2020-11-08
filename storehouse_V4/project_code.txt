@@ -1,0 +1,834 @@
+;
+; storehouse_V4.asm
+;
+; Created: 18/12/2017 09:57:40 ã
+; Author : Yara
+;
+
+
+; Replace with your application code
+.INCLUDE "M32DEF.INC"
+
+
+.ORG 0x00
+
+.EQU LCD_RSPin = 0
+.EQU LCD_RWPin = 1
+.EQU LCD_EnablePin = 2
+
+.EQU Port_Data_PORT = PORTB  ;i use all of pins in port 0,1,2,3,4,5,6,7
+.EQU Port_Data_DDR = DDRB 
+.EQU Port_Control_PORT  = PORTA  ; pins 0,1,2
+.EQU Port_Control_DDR = DDRA
+
+.EQU KEY_PORT=PORTD
+.EQU KEY_PIN=PIND
+.EQU KEY_DDR=DDRD
+
+.EQU Port_7segment_PORT = PORTC  ;i use all of pins in port 0,1,2,3,4,5,6
+.EQU Port_7segment_DDR = DDRC
+
+.EQU Port_LED_M_B = PORTA
+.EQU DDR_LED_M_B = DDRA
+
+LDI R21,HIGH(RAMEND)
+OUT SPH,R21
+LDI R21,LOW(RAMEND)
+OUT SPL,R21
+LDI R20,0xF0
+OUT KEY_DDR,R20
+
+MAIN:
+;DIRECTION ALL PINS
+SBI DDRA ,0 ;LCD_RS
+SBI DDRA ,1 ;LCD_RWPin
+SBI DDRA ,2 ;LCD_EnablePin
+SBI DDRA ,3 ;LED RED
+SBI DDRA ,4 ;LED GREEN
+SBI DDRA ,5 ;BUZZER
+SBI DDRA ,6 ;MOTOR
+SBI DDRA ,7 ;MOTOR
+
+SBI DDRB ,0 ;LCD_D0
+SBI DDRB ,1 ;LCD_D1
+SBI DDRB ,2 ;LCD_D2
+SBI DDRB ,3 ;LCD_D3
+SBI DDRB ,4 ;LCD_D4
+SBI DDRB ,5 ;LCD_D5
+SBI DDRB ,6 ;LCD_D6
+SBI DDRB ,7 ;LCD_D7
+
+SBI DDRC ,0 ;7SEG
+SBI DDRC ,1 ;7SEG
+SBI DDRC ,2 ;7SEG
+SBI DDRC ,3 ;7SEG
+SBI DDRC ,4 ;7SEG
+SBI DDRC ,5 ;7SEG
+SBI DDRC ,6 ;7SEG
+;*****************************************************
+
+CALL LCD_vInitialize
+CALL Seven_Segment_vInitialize
+CALL initials_leds_motor_buzzer
+
+LDI R17 , 'E'
+CALL LCD_vWriteChar
+LDI R17 , 'n'
+CALL LCD_vWriteChar
+LDI R17 , 't'
+CALL LCD_vWriteChar
+LDI R17 , 'e'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , ' '
+CALL LCD_vWriteChar
+LDI R17 , 'P'
+CALL LCD_vWriteChar
+LDI R17 , 'a'
+CALL LCD_vWriteChar
+LDI R17 , 's'
+CALL LCD_vWriteChar
+LDI R17 , 's'
+CALL LCD_vWriteChar
+LDI R17 , 'w'
+CALL LCD_vWriteChar
+LDI R17 , 'o'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , 'd'
+CALL LCD_vWriteChar
+CALL DELAY_1S
+
+LDI R26 , 3
+
+LOOP_MAIN:
+MOV R17 , R26
+CALL Seven_Segment_function
+
+CALL enter_pass
+CALL check
+
+CPI R25 , 1 ;TRUE
+BREQ TRUE_CALL
+CPI R26 , 1
+BREQ J
+CALL ENTER_AGAIN
+J:
+DEC R26
+BRNE LOOP_MAIN
+
+MOV R17 , R26
+CALL Seven_Segment_function
+CALL FINSH_PASS
+
+TRUE_CALL:
+CALL TRUE_PASS
+
+DONE_MAIN:
+
+ENTER_AGAIN:
+CALL DELAY_500MS
+CALL LCD_vWriteCommand_Fun_CLEAR
+LDI R17 , 'E'
+CALL LCD_vWriteChar
+LDI R17 , 'n'
+CALL LCD_vWriteChar
+LDI R17 , 't'
+CALL LCD_vWriteChar
+LDI R17 , 'e'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , ' '
+CALL LCD_vWriteChar
+LDI R17 , 'P'
+CALL LCD_vWriteChar
+LDI R17 , 'a'
+CALL LCD_vWriteChar
+LDI R17 , 's'
+CALL LCD_vWriteChar
+LDI R17 , 's'
+CALL LCD_vWriteChar
+LDI R17 , 'w'
+CALL LCD_vWriteChar
+LDI R17 , 'o'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , 'd'
+CALL LCD_vWriteChar
+CALL gotoXY
+LDI R17 , 'A'
+CALL LCD_vWriteChar
+LDI R17 , 'g'
+CALL LCD_vWriteChar
+LDI R17 , 'a'
+CALL LCD_vWriteChar
+LDI R17 , 'i'
+CALL LCD_vWriteChar
+LDI R17 , 'n'
+CALL LCD_vWriteChar
+CALL DELAY_500MS
+RET
+
+FINSH_PASS:
+CALL DELAY_500MS
+CALL LCD_vWriteCommand_Fun_CLEAR
+LDI R17 , 'Y'
+CALL LCD_vWriteChar
+LDI R17 , 'o'
+CALL LCD_vWriteChar
+LDI R17 , 'u'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , ' '
+CALL LCD_vWriteChar
+LDI R17 , 'a'
+CALL LCD_vWriteChar
+LDI R17 , 't'
+CALL LCD_vWriteChar
+LDI R17 , 't'
+CALL LCD_vWriteChar
+LDI R17 , 'e'
+CALL LCD_vWriteChar
+LDI R17 , 'm'
+CALL LCD_vWriteChar
+LDI R17 , 'p'
+CALL LCD_vWriteChar
+LDI R17 , 't'
+CALL LCD_vWriteChar
+CALL gotoXY
+LDI R17 , 'h'
+CALL LCD_vWriteChar
+LDI R17 , 'a'
+CALL LCD_vWriteChar
+LDI R17 , 's'
+CALL LCD_vWriteChar
+LDI R17 , ' '
+CALL LCD_vWriteChar
+LDI R17 , 'E'
+CALL LCD_vWriteChar
+LDI R17 , 'x'
+CALL LCD_vWriteChar
+LDI R17 , 'p'
+CALL LCD_vWriteChar
+LDI R17 , 'i'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , 'e'
+CALL LCD_vWriteChar
+LDI R17 , 'd'
+CALL LCD_vWriteChar
+RED_BUZZER:
+SBI PORTA ,3 ;LED RED
+SBI PORTA ,5 ;BUZZER
+CALL DELAY_500MS
+CBI PORTA ,3 ;LED RED
+CALL DELAY_500MS
+RJMP RED_BUZZER
+JMP HERE
+RET
+
+TRUE_PASS:CALL LCD_vWriteCommand_Fun_CLEAR
+LDI R17 , 'C'
+CALL LCD_vWriteChar
+LDI R17 , 'o'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , 'r'
+CALL LCD_vWriteChar
+LDI R17 , 'e'
+CALL LCD_vWriteChar
+LDI R17 , 'c'
+CALL LCD_vWriteChar
+LDI R17 , 't'
+CALL LCD_vWriteChar
+SBI PORTA ,4 ;LED GREEN 
+SBI PORTA ,6 ;MOTOR
+CBI PORTA ,7 ;MOTOR
+CALL DELAY_500MS
+CBI PORTA ,6 ;MOTOR
+CBI PORTA ,7 ;MOTOR
+SBI PORTA ,4 ;LED GREEN
+RJMP HERE
+RET
+
+HERE:
+
+RJMP HERE
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+enter_pass:
+CALL LCD_vWriteCommand_Fun_CLEAR
+LDI R23 , 0 ; COUNTER OF NUMBERS OF PASS ENTERED
+
+;1
+CALL KEYPAD
+CPI R20 , '#'
+BREQ CLEAR_BREAK
+MOV R16 , R20
+INC R23
+MOV R17 , R20
+CALL LCD_vWriteChar
+;2
+CALL KEYPAD
+CPI R20 , '#'
+BREQ CLEAR_BREAK
+MOV R27 , R20
+INC R23
+MOV R17 , R20
+CALL LCD_vWriteChar
+;3
+CALL KEYPAD
+CPI R20 , '#'
+BREQ CLEAR_BREAK
+MOV R22 , R20
+INC R23
+MOV R17 , R20
+CALL LCD_vWriteChar
+;4
+CALL KEYPAD
+CPI R20 , '#'
+BREQ CLEAR_BREAK
+MOV R28 , R20
+INC R23
+MOV R17 , R20
+CALL LCD_vWriteChar
+;5
+CALL KEYPAD
+CPI R20 , '#'
+BREQ CLEAR_BREAK
+MOV R29 , R20
+INC R23
+MOV R17 , R20
+CALL LCD_vWriteChar
+
+LOOP_ENTER:
+CALL KEYPAD
+CPI R20 , '#'
+BREQ CLEAR_BREAK
+INC R23
+MOV R17 , R20
+CALL LCD_vWriteChar
+JMP LOOP_ENTER
+
+DONE_LOOP_ENTERPASS:
+
+RET
+CLEAR_BREAK:
+CALL LCD_vWriteCommand_Fun_CLEAR
+RJMP DONE_LOOP_ENTERPASS
+
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+check:
+
+LDI R24 , 5 ;COUNTER OF NUMBERS 
+LDI R25 , 0 ;RETURN
+CP R23 , R24
+BRNE ERROR
+
+;1
+CPI R16 , '1'
+BRNE ERROR
+;2
+CPI R27 , '2'
+BRNE ERROR
+;3
+CPI R22 , '3'
+BRNE ERROR
+;4
+CPI R28 , '4'
+BRNE ERROR
+;5
+CPI R29 , '5'
+BRNE ERROR
+
+LDI R25 , 1
+
+DONE_FUN_check:
+RET
+
+ERROR:
+CALL LCD_vWriteCommand_Fun_CLEAR
+LDI R17 , 'E'
+CALL LCD_vWriteChar
+LDI R17 , 'R'
+CALL LCD_vWriteChar
+LDI R17 , 'R'
+CALL LCD_vWriteChar
+LDI R17 , 'O'
+CALL LCD_vWriteChar
+LDI R17 , 'R'
+CALL LCD_vWriteChar
+LDI R25 , 0
+RJMP DONE_FUN_check
+
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+initials_leds_motor_buzzer:
+CBI Port_LED_M_B , 3 ; LED RED
+CBI Port_LED_M_B , 4 ; LED GREEN
+CBI Port_LED_M_B , 5 ; BUZZER
+;MOTOR
+CBI Port_LED_M_B , 6
+CBI Port_LED_M_B , 7
+RET
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;FUNCTION INITIALIZE LCD
+LCD_vInitialize :
+;Diricton port data & control
+LDI R17 , 0XFF
+OUT Port_Data_DDR , R17
+SBI Port_Control_DDR , 0
+SBI Port_Control_DDR , 1
+SBI Port_Control_DDR , 2
+;delay 500 ms
+CALL DELAY_500MS
+;writeCommand 0011 1000
+LDI R17 , 0X38
+CALL LCD_vWriteCommand
+;delay 2 ms
+CALL DELAY_2MS
+;writeCommand 0000 1100
+LDI R17 , 0X0C
+CALL LCD_vWriteCommand
+;delay 2 ms
+CALL DELAY_2MS
+;writeCommand 0000 0001
+LDI R17 , 0X01
+CALL LCD_vWriteCommand
+;delay 2 ms
+CALL DELAY_2MS_YARA
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FUNCTION WRITE COMMAND LCD
+LCD_vWriteCommand:
+;RS control -> 0
+CBI Port_Control_PORT , LCD_RSPin
+;RW control -> 0
+CBI Port_Control_PORT , LCD_RWPin
+;Data output
+OUT Port_Data_PORT , R17
+;enable ->1
+SBI Port_Control_PORT , LCD_EnablePin
+;delay
+CALL DELAY_2MS_YARA
+;disable ->0
+CBI Port_Control_PORT , LCD_EnablePin
+
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FUNCTION CLEAR LCD
+LCD_vWriteCommand_Fun_CLEAR:
+;RS control -> 0
+CBI Port_Control_PORT , LCD_RSPin
+;RW control -> 0
+CBI Port_Control_PORT , LCD_RWPin
+;Data output
+LDI R17 , 0X01
+OUT Port_Data_PORT , R17
+;enable ->1
+SBI Port_Control_PORT , LCD_EnablePin
+;delay
+CALL DELAY_2MS_YARA
+;disable ->0
+CBI Port_Control_PORT , LCD_EnablePin
+
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FUNCTION WRITE CHAR ON LCD
+LCD_vWriteChar:
+;LDI R17 , '1'  ;EL CHAR IN R17
+;RS control -> 1
+SBI Port_Control_PORT , LCD_RSPin
+;RW control -> 0
+CBI Port_Control_PORT , LCD_RWPin
+;Data output
+OUT Port_Data_PORT , R17
+;enable
+SBI Port_Control_PORT , LCD_EnablePin
+;delay
+CALL DELAY_2MS_YARA
+;disable
+CBI Port_Control_PORT , LCD_EnablePin
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FUNCTION WRITE STRING ON LCD
+LCD_vWriteString:
+;LDI R17 , string
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FUNCTION GO TO NEXT LINE
+gotoXY:
+LDI R17 , 0XC0
+CALL LCD_vWriteCommand
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; FUN DELAY 2MS 
+DELAY_2MS_YARA:
+LDI R18 , 250
+LOOP_DELAY_2MS1:
+LDI R19 , 16
+   LOOP_DELAY_2MS2:
+   NOP
+   DEC R19 
+   BRNE LOOP_DELAY_2MS2
+DEC R18
+BRNE LOOP_DELAY_2MS1
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FUN DELAY 500MS
+DELAY_500MS:
+LDI R18 , 250
+  LOOP_DELAY_500MS1:
+  LDI R19 , 250
+    LOOP_DELAY_500MS2:
+    LDI R20 , 16
+	  LOOP_DELAY_500MS3:
+	  NOP
+	  DEC R20
+	  BRNE LOOP_DELAY_500MS3
+	DEC R19
+	BRNE LOOP_DELAY_500MS2
+ DEC R18
+ BRNE LOOP_DELAY_500MS3
+RET
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+KEYPAD:
+
+GROUND_ALL_ROWS:
+LDI R20,0x0F
+OUT KEY_PORT,R20
+
+WAIT_FOR_RELEASE:
+NOP
+IN R21,KEY_PIN
+ANDI R21,0x0F
+CPI R21,0x0F
+BRNE WAIT_FOR_RELEASE
+
+WAIT_FOR_KEY:
+NOP
+IN R21,KEY_PIN
+ANDI R21,0x0F
+CPI R21,0x0F
+BREQ WAIT_FOR_KEY
+CALL WAIT15MS
+IN R21,KEY_PIN
+ANDI R21,0x0F
+CPI R21,0x0F
+BREQ WAIT_FOR_KEY
+LDI R21,0b01111111
+OUT KEY_PORT,R21
+NOP
+IN R21,KEY_PIN
+ANDI R21,0x0F
+CPI R21,0x0F
+BRNE COL1
+LDI R21,0b10111111
+OUT KEY_PORT,R21
+NOP
+IN R21,KEY_PIN
+ANDI R21,0x0F
+CPI R21,0x0F
+BRNE COL2
+LDI R21,0b11011111
+OUT KEY_PORT,R21
+NOP
+IN R21,KEY_PIN
+ANDI R21,0x0F
+CPI R21,0x0F
+BRNE COL3
+LDI R21,0b11101111
+OUT KEY_PORT,R21
+NOP
+IN R21,KEY_PIN
+ANDI R21,0x0F
+CPI R21,0x0F
+BRNE COL4
+
+COL1:
+LDI R30,LOW(KCODE0<<1)
+LDI R31,HIGH(KCODE0<<1)
+RJMP FIND
+COL2:
+LDI R30,LOW(KCODE1<<1)
+LDI R31,HIGH(KCODE1<<1)
+RJMP FIND
+COL3:
+LDI R30,LOW(KCODE2<<1)
+LDI R31,HIGH(KCODE2<<1)
+RJMP FIND
+COL4:
+LDI R30,LOW(KCODE3<<1)
+LDI R31,HIGH(KCODE3<<1)
+RJMP FIND
+
+FIND:
+LSR R21
+BRCC MATCH
+LPM R20,Z+
+RJMP FIND
+MATCH:
+LPM R20,Z
+;MOV R16,R20
+;OUT PORTA,R20
+RET
+;************************************************************************************
+SDELAY: NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+RET
+;************************************************************************************
+DELAY_2MS:
+PUSH R16
+PUSH R18
+LDI R16,100
+LOOP1: LDI R18,160
+LOOP0: DEC R18
+BRNE LOOP0
+DEC R16
+BRNE LOOP1
+POP R18
+POP R16
+RET
+
+WAIT15MS:
+PUSH R20
+PUSH R21
+LDI R21,0xFF
+LOOP3:LDI R20,0xFF
+LOOP2: DEC R20
+BRNE LOOP2
+DEC R21
+BRNE LOOP3
+POP R21
+POP R20
+RET
+
+.ORG 0x300
+KCODE0: .DB 'A','B','C','D'
+KCODE1: .DB '3','6','9','#'
+KCODE2: .DB '2','5','8','0'
+KCODE3: .DB '1','4','7','*'
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;FUNCTION INITIALIZE
+Seven_Segment_vInitialize :
+;Directon port
+SBI Port_7segment_DDR , 0
+SBI Port_7segment_DDR , 1
+SBI Port_7segment_DDR , 2
+SBI Port_7segment_DDR , 3
+SBI Port_7segment_DDR , 4
+SBI Port_7segment_DDR , 5
+SBI Port_7segment_DDR , 6
+;INITIAL CASE
+SBI Port_7segment_PORT , 0
+SBI Port_7segment_PORT , 1
+SBI Port_7segment_PORT , 2
+SBI Port_7segment_PORT , 3
+SBI Port_7segment_PORT , 4
+SBI Port_7segment_PORT , 5
+SBI Port_7segment_PORT , 6
+RET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;function seve
+Seven_Segment_function:
+LDI R18 , 9
+CP R18 ,R17
+BREQ NUM_9
+LDI R18 , 8
+CP R18 ,R17
+BREQ NUM_8
+LDI R18 , 7
+CP R18 ,R17
+BREQ NUM_7
+LDI R18 , 6
+CP R18 ,R17
+BREQ NUM_6
+LDI R18 , 5
+CP R18 ,R17
+BREQ NUM_5
+LDI R18 , 4
+CP R18 ,R17
+BREQ NUM_4
+LDI R18 , 3
+CP R18 ,R17
+BREQ NUM_3
+LDI R18 , 2
+CP R18 ,R17
+BREQ NUM_2
+LDI R18 , 1
+CP R18 ,R17
+BREQ NUM_1
+LDI R18 , 0
+CP R18 ,R17
+BREQ NUM_0
+;;;;;;;;;;;;;;;;;;
+NUM_9: RJMP CALL_NUM_9
+NUM_8: RJMP CALL_NUM_8
+NUM_7: RJMP CALL_NUM_7
+NUM_6: RJMP CALL_NUM_6
+NUM_5: RJMP CALL_NUM_5
+NUM_4: RJMP CALL_NUM_4
+NUM_3: RJMP CALL_NUM_3
+NUM_2: RJMP CALL_NUM_2
+NUM_1: RJMP CALL_NUM_1
+NUM_0: RJMP CALL_NUM_0
+;IF NUMBER=9
+CALL_NUM_9:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 2
+CBI Port_7segment_PORT , 3
+CBI Port_7segment_PORT , 5
+CBI Port_7segment_PORT , 6
+SBI Port_7segment_PORT , 4
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 8
+CALL_NUM_8:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 2
+CBI Port_7segment_PORT , 3
+CBI Port_7segment_PORT , 4
+CBI Port_7segment_PORT , 5
+CBI Port_7segment_PORT , 6
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 7
+CALL_NUM_7:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 2
+SBI Port_7segment_PORT , 3
+SBI Port_7segment_PORT , 4
+SBI Port_7segment_PORT , 5
+SBI Port_7segment_PORT , 6
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 6
+CALL_NUM_6:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 5
+CBI Port_7segment_PORT , 4
+CBI Port_7segment_PORT , 3
+CBI Port_7segment_PORT , 2
+CBI Port_7segment_PORT , 6
+SBI Port_7segment_PORT , 1
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 5
+CALL_NUM_5:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 5
+CBI Port_7segment_PORT , 6
+CBI Port_7segment_PORT , 2
+CBI Port_7segment_PORT , 3
+SBI Port_7segment_PORT , 1
+SBI Port_7segment_PORT , 4
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 4
+CALL_NUM_4:
+CBI Port_7segment_PORT , 5
+CBI Port_7segment_PORT , 6
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 2
+SBI Port_7segment_PORT , 0
+SBI Port_7segment_PORT , 4
+SBI Port_7segment_PORT , 3
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 3
+CALL_NUM_3:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 6
+CBI Port_7segment_PORT , 2
+CBI Port_7segment_PORT , 3
+SBI Port_7segment_PORT , 5
+SBI Port_7segment_PORT , 4
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 2
+CALL_NUM_2:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 6
+CBI Port_7segment_PORT , 4
+CBI Port_7segment_PORT , 3
+SBI Port_7segment_PORT , 5
+SBI Port_7segment_PORT , 2
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 1
+CALL_NUM_1:
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 2
+SBI Port_7segment_PORT , 0
+SBI Port_7segment_PORT , 3
+SBI Port_7segment_PORT , 4
+SBI Port_7segment_PORT , 5
+SBI Port_7segment_PORT , 6
+JMP DONE_7SEGMENT_FUN
+;IF NUMBER = 0
+CALL_NUM_0:
+CBI Port_7segment_PORT , 0
+CBI Port_7segment_PORT , 1
+CBI Port_7segment_PORT , 2
+CBI Port_7segment_PORT , 3
+CBI Port_7segment_PORT , 4
+CBI Port_7segment_PORT , 5
+SBI Port_7segment_PORT , 6
+JMP DONE_7SEGMENT_FUN
+
+DONE_7SEGMENT_FUN:
+RET
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+DELAY_1S:
+LDI R18 , 255
+  LOOP_DELAY_1S1:
+  LDI R19 , 255
+    LOOP_DELAY_1S2:
+    LDI R20 , 123
+	  LOOP_DELAY_1S3:
+	  NOP
+	  DEC R20
+	  BRNE LOOP_DELAY_1S3
+	DEC R19
+	BRNE LOOP_DELAY_1S2
+ DEC R18
+ BRNE LOOP_DELAY_1S3
+RET

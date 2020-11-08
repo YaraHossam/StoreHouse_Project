@@ -1,0 +1,98 @@
+enter_pass:
+CALL LCD_vWriteCommand_Fun_CLEAR
+LDI R23 , 0 ; COUNTER OF NUMBERS OF PASS ENTERED
+.dseg
+REALPASS: .DB '1','2','3','4','5'
+.equ sizeof_array = 10
+PASS_array: .byte sizeof_array
+
+.cseg
+ldi ZL, low(PASS_array<<1)
+ldi ZH, high(PASS_array<<1)
+ldi r22, 10
+sum_array_loop:
+CALL KEYPAD
+
+CPI R20 , '#'
+BREQ CLEAR_BREAK
+;PUSH R20
+
+INC R23
+MOV R0 , R20
+SPM
+INC ZL
+;MOV R17 , R20
+LDI R17 , '*'
+CALL LCD_vWriteChar
+  
+  dec r22
+  brne sum_array_loop
+DONE_LOOP_ENTERPASS:
+
+RET
+CLEAR_BREAK:
+CALL LCD_vWriteCommand_Fun_CLEAR
+RJMP DONE_LOOP_ENTERPASS
+
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+check:
+
+LDI R24 , 5 ;COUNTER OF NUMBERS 
+CP R23 , R24
+BRNE ERROR
+
+ldi XL, low(REALPASS<<1)
+ldi XH, high(REALPASS<<1)
+ldi YL, low(PASS_array<<1)
+ldi YH, high(PASS_array<<1)
+;MOV R29 , XL
+;SUBI R29 , -5
+
+LOOP_CHECK:
+LD R27, X
+
+;CALL LCD_vWriteCommand_Fun_CLEAR
+;mov r17 , r27
+;CALL LCD_vWriteChar
+;call DELAY_500MS
+LD R26, Y
+;CALL LCD_vWriteCommand_Fun_CLEAR
+;mov r17 , r27
+;CALL LCD_vWriteChar
+;call DELAY_500MS
+CP R26 , R27
+BRNE ERROR
+INC YL
+INC XL
+DEC R23
+BRNE LOOP_CHECK
+
+
+DONE_FUN_check:
+RET
+ERROR:
+CALL LCD_vWriteCommand_Fun_CLEAR
+LDI R17 , 'E'
+CALL LCD_vWriteChar
+LDI R17 , 'R'
+CALL LCD_vWriteChar
+LDI R17 , 'R'
+CALL LCD_vWriteChar
+LDI R17 , 'O'
+CALL LCD_vWriteChar
+LDI R17 , 'R'
+CALL LCD_vWriteChar
+LDI R25 , 0
+RJMP DONE_FUN_check
+
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
+;***********************************************************************
